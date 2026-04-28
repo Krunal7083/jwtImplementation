@@ -29,12 +29,36 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   AuthenticationProvider authenticationProvider) throws Exception {
+
         http
             .csrf(csrf -> csrf.disable())
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll()
-            );
+            	    .requestMatchers(
+            	            "/", "/index.html",
+            	            "/signup.html", "/login.html", "/admin-login.html",
+            	            "/customer-home.html", "/view-cart.html",
+            	            "/admin-home.html",
+            	            "/add-product.html", "/all-products-admin.html",
+            	            "/edit-product.html", "/view-product-admin.html",
+            	            "/css/**", "/js/**"
+            	    ).permitAll()
+            	    .requestMatchers("/auth/**", "/hello").permitAll()
+            	    .requestMatchers("/customer/cart/**").hasRole("USER")
+            	    .requestMatchers("/products/**").hasAnyRole("USER", "ADMIN")
+            	    .requestMatchers("/admin/**").hasRole("ADMIN")
+            	    .requestMatchers("/customer/**").hasAnyRole("USER", "ADMIN")
+            	    .anyRequest().authenticated()
+            	)
+            .authenticationProvider(authenticationProvider)
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .formLogin(form -> form.disable())
+            .httpBasic(basic -> basic.disable());
+
         return http.build();
     }
 

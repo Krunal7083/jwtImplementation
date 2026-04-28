@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.example.jwtDemo.dto.AuthResponse;
 import com.example.jwtDemo.dto.LoginRequest;
 import com.example.jwtDemo.dto.RegisterRequest;
+import com.example.jwtDemo.entity.Role;
 import com.example.jwtDemo.entity.User;
 import com.example.jwtDemo.repository.UserRepository;
 
@@ -54,12 +55,16 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(
                         request.username(),
                         request.password()
+                        
                 )
         );
+
+        User user = userRepository.findByUsername(request.username())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         UserDetails userDetails = customUserDetailsService.loadUserByUsername(request.username());
         String token = jwtService.generateToken(userDetails);
 
-        return new AuthResponse(token, "Bearer", userDetails.getUsername());
+        return new AuthResponse(token, "Bearer", userDetails.getUsername(), user.getRole());
     }
 }
